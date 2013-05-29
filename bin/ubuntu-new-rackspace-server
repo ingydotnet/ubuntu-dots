@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -ex
+
+main() {
+    check_ip_address $1
+    root_tasks
+    user_tasks
+}
+
+#             apt-get upgrade; \
+root_tasks() {
+    ssh -t root@$IPADDR " \
+            apt-get update; \
+            adduser $USER; \
+            addgroup admin; \
+            adduser ingy admin; \
+            mkdir /home/ingy/.ssh; \
+            chown ingy.ingy /home/ingy/.ssh; \
+            apt-get install \
+                make gcc libreadline-dev \
+                build-essential libicu-dev \
+                libssl-dev zlib1g-dev \
+                exuberant-ctags git irssi \
+                fontconfig \
+            ";
+}
+
+user_tasks() {
+    cat ~/.ssh/id_rsa.pub | ssh $USER@$IPADDR "cat >> ~/.ssh/authorized_keys"
+    ssh -t $USER@$IPADDR 'git clone git@github.com:ingydotnet/....git'
+    scp $HOME/.../conf $USER@$IPADDR:.../conf
+    ssh -t $USER@$IPADDR ' \
+            .../... update; \
+            .../... install; \
+            bash; \
+            sudo reboot; \
+            '
+}
+
+check_ip_address() {
+    [ -z $1 ] && die "Usage: $0 <ip-addr>"
+    IPADDR=$1
+}
+
+die() {
+    echo $1
+    exit 1
+}
+
+main $*
